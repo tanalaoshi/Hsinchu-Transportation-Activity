@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hsinchu Adventure Planner</title>
+<style>
+  :root{
+    --ink:#17324d;
+    --muted:#617487;
+    --sky:#eaf7ff;
+    --blue:#4ca7e8;
+    --green:#5ebc78;
+    --yellow:#ffd85a;
+    --orange:#ff9f43;
+    --pink:#ff7f9c;
+    --purple:#9b82e8;
+    --card:#ffffff;
+    --line:#d7e5ef;
+    --shadow:0 10px 28px rgba(39,76,103,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: "Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,#eaf8ff 0%,#f8fcff 55%,#fffaf0 100%);
+  }
+  .app{max-width:1180px;margin:0 auto;padding:24px 22px 50px}
+  .hero{
+    background:linear-gradient(135deg,#ffffff 0%,#f2fbff 100%);
+    border:2px solid #d9edf9;border-radius:30px;padding:24px 28px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .hero:after{
+    content:"✈️";position:absolute;right:30px;top:16px;font-size:64px;transform:rotate(-8deg);
+  }
+  h1{margin:0 0 6px;font-size:clamp(30px,5vw,48px);letter-spacing:-1px}
+  .subtitle{margin:0;color:var(--muted);font-size:18px;font-weight:700}
+  .step{margin-top:24px}
+  .step-title{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:25px}
+  .step-number{
+    width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:var(--ink);color:#fff;font-size:18px;
+  }
+  .destination-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px
+  }
+  button{font:inherit}
+  .destination{
+    border:3px solid var(--line);background:#fff;border-radius:18px;
+    padding:15px 12px;min-height:92px;text-align:left;cursor:pointer;
+    box-shadow:0 4px 10px rgba(50,90,120,.06);transition:.16s;
+    color:var(--ink);font-weight:800;
+  }
+  .destination:hover{transform:translateY(-2px);border-color:#9fd3ef}
+  .destination.selected{border-color:var(--blue);background:#eef9ff;box-shadow:0 0 0 4px rgba(76,167,232,.14)}
+  .dest-icon{font-size:31px;display:block;margin-bottom:5px}
+  .dest-name{font-size:16px;line-height:1.18}
+  .priority-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .priority{
+    border:3px solid var(--line);background:#fff;border-radius:20px;
+    padding:17px 15px;text-align:left;cursor:pointer;min-height:125px;
+    transition:.16s;box-shadow:0 4px 10px rgba(50,90,120,.06);color:var(--ink)
+  }
+  .priority:hover{transform:translateY(-2px)}
+  .priority.selected.fast{border-color:var(--orange);background:#fff8ec;box-shadow:0 0 0 4px rgba(255,159,67,.15)}
+  .priority.selected.cheap{border-color:#e3b900;background:#fffbe8;box-shadow:0 0 0 4px rgba(255,216,90,.18)}
+  .priority.selected.green{border-color:var(--green);background:#f0fff4;box-shadow:0 0 0 4px rgba(94,188,120,.15)}
+  .priority .emoji{font-size:34px}
+  .priority strong{display:block;font-size:21px;margin:4px 0}
+  .priority span{color:var(--muted);font-weight:700}
+  .results{
+    margin-top:28px;background:#fff;border-radius:28px;border:2px solid #dbe9f1;
+    box-shadow:var(--shadow);overflow:hidden
+  }
+  .winner-head{padding:22px 26px;color:#fff}
+  .winner-head.fast{background:linear-gradient(135deg,#ff9f43,#ff7a59)}
+  .winner-head.cheap{background:linear-gradient(135deg,#e7c532,#e2a900)}
+  .winner-head.green{background:linear-gradient(135deg,#58b978,#329e62)}
+  .winner-kicker{text-transform:uppercase;font-weight:900;letter-spacing:1.5px;font-size:14px}
+  .winner-title{font-size:clamp(27px,4vw,39px);font-weight:900;margin-top:3px}
+  .winner-sub{font-size:17px;font-weight:700;margin-top:5px;opacity:.96}
+  .route-card{padding:24px 26px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+  .stat{border:2px solid var(--line);border-radius:17px;padding:13px;background:#fbfdff}
+  .stat-label{font-size:13px;color:var(--muted);font-weight:900;text-transform:uppercase}
+  .stat-value{font-size:25px;font-weight:900;margin-top:2px}
+  .journey{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    background:#f5fbff;border-radius:20px;padding:18px;margin-bottom:18px
+  }
+  .leg{display:flex;align-items:center;gap:6px}
+  .bubble{
+    width:56px;height:56px;border-radius:16px;background:#fff;border:2px solid #d9e8f2;
+    display:grid;place-items:center;font-size:28px;box-shadow:0 4px 8px rgba(30,70,100,.06)
+  }
+  .leg-label{font-size:12px;font-weight:900;text-align:center;max-width:70px}
+  .arrow{font-size:25px;color:#7d98aa;font-weight:900}
+  .why{
+    border-radius:17px;background:#fff7dc;border:2px solid #f4dd8b;
+    padding:15px 17px;font-size:17px;line-height:1.4
+  }
+  .why strong{display:block;margin-bottom:3px}
+  .alternates{padding:0 26px 26px}
+  .alternates h3{margin:0 0 10px;font-size:20px}
+  .alt{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    border:2px solid var(--line);border-radius:14px;padding:11px 14px;margin-top:8px;
+    background:#fff
+  }
+  .alt-name{font-weight:900}
+  .alt-detail{color:var(--muted);font-weight:700;font-size:14px;text-align:right}
+  .note{
+    margin-top:22px;padding:13px 16px;background:#eef7fb;border-radius:14px;
+    color:#536d80;font-size:13px;line-height:1.45
+  }
+  .hidden{display:none}
+  .empty{
+    padding:24px;text-align:center;color:var(--muted);font-weight:800;
+    background:#fff;border:2px dashed #c8dce8;border-radius:18px;margin-top:22px
+  }
+  .reset{
+    margin-top:18px;border:0;background:var(--ink);color:#fff;padding:12px 18px;
+    border-radius:14px;font-weight:900;cursor:pointer
+  }
+  @media(max-width:760px){
+    .destination-grid,.priority-grid{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr}
+    .hero:after{opacity:.25}
+    .app{padding:14px}
+    .route-card,.alternates{padding-left:16px;padding-right:16px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <h1>🌟 Hsinchu Adventure Planner</h1>
+    <p class="subtitle">Choose a place. Choose what matters. Let AI find your best route!</p>
+
+    <div class="step">
+      <h2 class="step-title"><span class="step-number">1</span> Where are you going?</h2>
+      <div class="destination-grid" id="destinations"></div>
+    </div>
+
+    <div class="step">
+      <h2 class="step-title"><span class="step-number">2</span> What matters most?</h2>
+      <div class="priority-grid">
+        <button class="priority fast" data-priority="fast">
+          <span class="emoji">⚡</span>
+          <strong>Fast</strong>
+          <span>Get there quickly!</span>
+        </button>
+        <button class="priority cheap" data-priority="cheap">
+          <span class="emoji">💰</span>
+          <strong>Cheap</strong>
+          <span>Save your money!</span>
+        </button>
+        <button class="priority green" data-priority="green">
+          <span class="emoji">🌱</span>
+          <strong>Green</strong>
+          <span>Help the planet!</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div id="empty" class="empty">👆 Pick a destination and choose what matters most to see your route!</div>
+  <section id="results" class="results hidden"></section>
+
+  <button id="reset" class="reset hidden">↺ Start again</button>
+</div>
+
+<script>
+const destinations = [
+  {id:"bigcity", icon:"🛍️", name:"Big City Mall"},
+  {id:"zoo", icon:"🦁", name:"Hsinchu Zoo"},
+  {id:"gate", icon:"🏯", name:"East Gate"},
+  {id:"temple", icon:"🧧", name:"City God Temple"},
+  {id:"glass", icon:"🪟", name:"Hsinchu Glass Museum"},
+  {id:"image", icon:"🎬", name:"Image Museum"}
+];
+
+const modeInfo = {
+  taxi: {name:"Taxi", icon:"🚕", color:"taxi"},
+  bus: {name:"Bus", icon:"🚌", color:"bus"},
+  train: {name:"Train", icon:"🚆", color:"train"},
+  mrt: {name:"MRT", icon:"🚇", color:"mrt"},
+  hsr: {name:"HSR", icon:"🚄", color:"hsr"},
+  youbike: {name:"YouBike", icon:"🚲", color:"youbike"}
+};
+
+// Estimated, classroom-demo data. Each destination has:
+// time = minutes, cost = NT$, emissions = relative estimated grams CO2e/person.
+const routeData = {
+  bigcity: [
+    {name:"Taxi", time:44, cost:1250, emissions:920, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:57, cost:330, emissions:120, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:69, cost:170, emissions:105, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:82, cost:145, emissions:80, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:74, cost:180, emissions:65, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ],
+  zoo: [
+    {name:"Taxi", time:47, cost:1250, emissions:980, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:51, cost:330, emissions:125, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:67, cost:165, emissions:110, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:80, cost:145, emissions:82, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:65, cost:155, emissions:70, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ],
+  gate: [
+    {name:"Taxi", time:48, cost:1250, emissions:900, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:52, cost:330, emissions:118, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:65, cost:165, emissions:100, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:76, cost:145, emissions:76, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:61, cost:145, emissions:58, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ],
+  temple: [
+    {name:"Taxi", time:49, cost:1250, emissions:910, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:54, cost:330, emissions:122, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:66, cost:165, emissions:103, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:75, cost:145, emissions:75, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:62, cost:150, emissions:60, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ],
+  glass: [
+    {name:"Taxi", time:51, cost:1250, emissions:930, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:55, cost:330, emissions:124, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:64, cost:165, emissions:101, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:77, cost:145, emissions:78, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:60, cost:150, emissions:59, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ],
+  image: [
+    {name:"Taxi", time:47, cost:1250, emissions:900, legs:[["taxi","Taxi"]]},
+    {name:"MRT + HSR + Train", time:50, cost:330, emissions:116, legs:[["mrt","MRT"],["hsr","HSR"],["train","Train"]]},
+    {name:"MRT + Train", time:61, cost:165, emissions:98, legs:[["mrt","MRT"],["train","Train"]]},
+    {name:"Bus + YouBike", time:73, cost:145, emissions:72, legs:[["bus","Bus"],["youbike","YouBike"]]},
+    {name:"MRT + HSR + YouBike", time:58, cost:145, emissions:56, legs:[["mrt","MRT"],["hsr","HSR"],["youbike","YouBike"]]}
+  ]
+};
+
+let selectedDestination = null;
+let selectedPriority = null;
+
+const destEl = document.getElementById("destinations");
+const resultsEl = document.getElementById("results");
+const emptyEl = document.getElementById("empty");
+const resetEl = document.getElementById("reset");
+
+destinations.forEach(d => {
+  const b = document.createElement("button");
+  b.className = "destination";
+  b.dataset.id = d.id;
+  b.innerHTML = `<span class="dest-icon">${d.icon}</span><span class="dest-name">${d.name}</span>`;
+  b.addEventListener("click", () => {
+    selectedDestination = d.id;
+    document.querySelectorAll(".destination").forEach(x => x.classList.remove("selected"));
+    b.classList.add("selected");
+    render();
+  });
+  destEl.appendChild(b);
+});
+
+document.querySelectorAll(".priority").forEach(b => {
+  b.addEventListener("click", () => {
+    selectedPriority = b.dataset.priority;
+    document.querySelectorAll(".priority").forEach(x => x.classList.remove("selected"));
+    b.classList.add("selected");
+    render();
+  });
+});
+
+resetEl.addEventListener("click", () => {
+  selectedDestination = null;
+  selectedPriority = null;
+  document.querySelectorAll(".destination,.priority").forEach(x => x.classList.remove("selected"));
+  resultsEl.classList.add("hidden");
+  emptyEl.classList.remove("hidden");
+  resetEl.classList.add("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+function chooseWinner(routes, priority){
+  if(priority === "fast") return [...routes].sort((a,b)=>a.time-b.time || a.cost-b.cost)[0];
+  if(priority === "cheap") return [...routes].sort((a,b)=>a.cost-b.cost || a.time-b.time)[0];
+  return [...routes].sort((a,b)=>a.emissions-b.emissions || a.time-b.time)[0];
+}
+
+function priorityText(priority){
+  return {
+    fast:["⚡","Fastest route!","You chose SPEED!"],
+    cheap:["💰","Cheapest route!","You chose SAVING MONEY!"],
+    green:["🌱","Greenest route!","You chose HELPING THE PLANET!"]
+  }[priority];
+}
+
+function journeyHTML(route){
+  const parts = [`<div class="leg"><div class="bubble">✈️</div><div class="leg-label">Airport</div></div>`];
+  route.legs.forEach(([key,label], i) => {
+    parts.push(`<div class="arrow">→</div><div class="leg"><div class="bubble">${modeInfo[key].icon}</div><div class="leg-label">${label}</div></div>`);
+  });
+  parts.push(`<div class="arrow">→</div><div class="leg"><div class="bubble">📍</div><div class="leg-label">${destinations.find(d=>d.id===selectedDestination).name}</div></div>`);
+  return parts.join("");
+}
+
+function whyText(winner, priority){
+  if(priority === "fast"){
+    return `This route takes about <strong>${winner.time} minutes</strong>, which is the shortest estimated travel time of the choices.`;
+  }
+  if(priority === "cheap"){
+    return `This route costs about <strong>NT$${winner.cost}</strong>, which is the lowest estimated cost of the choices.`;
+  }
+  return `This route has the <strong>lowest estimated emissions</strong> of the choices at about ${winner.emissions} g CO₂e per traveler.`;
+}
+
+function render(){
+  if(!selectedDestination || !selectedPriority){
+    if(selectedDestination || selectedPriority){
+      emptyEl.innerHTML = selectedDestination
+        ? "👍 Great! Now choose <strong>What matters most?</strong> above."
+        : "👍 Great! Now choose <strong>Where are you going?</strong> above.";
+    }
+    return;
+  }
+
+  const routes = routeData[selectedDestination];
+  const winner = chooseWinner(routes, selectedPriority);
+  const [emoji, title, sub] = priorityText(selectedPriority);
+  const dest = destinations.find(d=>d.id===selectedDestination);
+  const others = routes.filter(r=>r !== winner).sort((a,b)=>a.time-b.time).slice(0,3);
+
+  resultsEl.innerHTML = `
+    <div class="winner-head ${selectedPriority}">
+      <div class="winner-kicker">🏆 YOUR BEST MATCH</div>
+      <div class="winner-title">${emoji} ${title}</div>
+      <div class="winner-sub">${sub} For <strong>${dest.name}</strong>, the app picked:</div>
+    </div>
+    <div class="route-card">
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Travel time</div><div class="stat-value">⏱️ ${winner.time} min</div></div>
+        <div class="stat"><div class="stat-label">Estimated cost</div><div class="stat-value">💵 NT$${winner.cost}</div></div>
+        <div class="stat"><div class="stat-label">Estimated emissions</div><div class="stat-value">🌍 ${winner.emissions} g</div></div>
+      </div>
+      <div class="journey">${journeyHTML(winner)}</div>
+      <div class="why"><strong>🤖 Why did AI pick it?</strong>${whyText(winner,selectedPriority)}</div>
+      <div class="note">💡 <strong>Classroom demo:</strong> These are estimated numbers for learning. A real version would check live departure times, traffic, HSR/TRA schedules, current fares, and YouBike availability.</div>
+    </div>
+    <div class="alternates">
+      <h3>👀 Other possible routes</h3>
+      ${others.map(r=>`<div class="alt"><div class="alt-name">${r.name}</div><div class="alt-detail">${r.time} min · NT$${r.cost} · ${r.emissions} g CO₂e</div></div>`).join("")}
+    </div>
+  `;
+  emptyEl.classList.add("hidden");
+  resultsEl.classList.remove("hidden");
+  resetEl.classList.remove("hidden");
+  resultsEl.scrollIntoView({behavior:"smooth",block:"start"});
+}
+</script>
+</body>
+</html>
